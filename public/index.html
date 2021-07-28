@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+    crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
+   <style>
+        #mapid { height: 180px; }
+    </style>
+    <title>Ma géolocalisation</title>
+</head>
+<body>
+
+    <h1>Data Selfie App</h1>
+
+        <p> Hello !</p>
+
+        <div id="mapid"> <!--Emplacement de la carte OpenStreet Map--> </div> 
+
+        <p class="coordonnees"> 
+            latitude: <span id="latitude"></span>&deg;<br />
+            longitude: <span id="longitude"></span>&deg;<br />        
+        </p> 
+
+        <div id="btnGeoloc"></div>
+
+        <br/>
+
+                <label for="mytext">Entrez votre texte ici :</label>
+                <input type="text" name='mytext' id="mytext"/> 
+
+              
+    <script>
+        
+
+        //Créer un bouton permettant d'afficher la géoloc
+        const btn = document.createElement('input')
+        btn.type = 'submit';
+        btn.name='bouton';
+        btn.value='Générer la localisation'
+        document.getElementById('btnGeoloc').appendChild(btn);
+      
+           
+            
+        let lat, lon;
+
+        //Au "click" : générer la localisation
+
+        btn.addEventListener('click', async event => {
+            
+            const vegetable = document.getElementById('mytext').value;
+            const data = { lat, lon, vegetable };
+            
+            const options = { //on va envoyer les coordonnees grâce à la méthode POST
+                method : 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // 'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: JSON.stringify(data), //on convertis les données en un string json
+            };
+            const response = await fetch('/api', options); //on va chercher (fetch) la route '/api' pour envoyer les données à l'api
+            const json = await response.json();
+            console.log(json);
+        });
+
+
+        if ("geolocation" in navigator) {       //test pour savoir si la géolocalisation est dispo sur le webbrowser
+
+            console.log("la géolocalisation est disponible !");  // la géolocalisation est disponible
+
+            //Génération des coordonnées par le navigateur
+
+            navigator.geolocation.getCurrentPosition(async position => {
+                lat = position.coords.latitude;
+                lon = position.coords.longitude;
+                document.getElementById('latitude').textContent = lat.toFixed(2);
+                document.getElementById('longitude').textContent = lon.toFixed(2);
+            
+    
+            //Création de la map
+
+            const mymap = L.map('mapid').setView([lat, lon], 3);
+            const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+            const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+            const tiles = L.tileLayer(tileUrl, { attribution });
+            tiles.addTo(mymap);
+
+            //Créer un marker avec une icone personnalisée
+
+            const moiIcon = L.icon({
+                iconUrl: 'me.png',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+            });
+    
+            const marker = L.marker([lat, lon], { icon: moiIcon }).addTo(mymap);  
+        });
+        }          
+        else {
+                console.log("la géolocalisation est indisponible :( ")    // la géolocalisation n'est pas disponible
+        }
+    
+
+    </script>
+        
+</body>
+</html>
