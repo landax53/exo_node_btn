@@ -4,21 +4,34 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- fichier CSS de la library leaflet-->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
     integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
     crossorigin=""/>
+
+    <!-- script de la library leaflet-->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-   crossorigin=""></script>
-   <style>
+    integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+    crossorigin=""></script>
+
+    <style>
         #mapid { height: 180px; }
     </style>
+    <!-- CDN de P5.js library pour utiliser la webcam -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.8.0/p5.min.js" integrity="sha512-P/Je1zlTfRugG4aRZRx9hYRVph2CkbpchkgP6ub1gNF/VNHDUNq0/WOY0CSLMmwEXxrQ7HohFmMenWGpx8ZzvQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.8.0/addons/p5.dom.min.js" integrity="sha512-hAm8hj9/2EIonvS+sf0G3anaY8zYHv6q7ktNlLTg8wLwFvhUavnDdH0gif8SA3U1kN0lyKBWbf1wD4+5BfaMMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  
     <title>Ma géolocalisation</title>
+
 </head>
+
 <body>
 
     <h1>Data Selfie App</h1>
 
+        <a href="/">enter</a> | <a href="./all.html">list</a>
+        <br/><br/>
         <p> Hello !</p>
 
         <div id="mapid"> <!--Emplacement de la carte OpenStreet Map--> </div> 
@@ -28,14 +41,13 @@
             longitude: <span id="longitude"></span>&deg;<br />        
         </p> 
 
+        <label for="mytext">Entrez votre texte ici :</label>
+        <input type="text" name='mytext' id="mytext"/> 
+
+        <br/><br/>
+
         <div id="btnGeoloc"></div>
-
-        <br/>
-
-                <label for="mytext">Entrez votre texte ici :</label>
-                <input type="text" name='mytext' id="mytext"/> 
-
-              
+      
     <script>
         
 
@@ -43,70 +55,72 @@
         const btn = document.createElement('input')
         btn.type = 'submit';
         btn.name='bouton';
-        btn.value='Générer la localisation'
+        btn.value='Générer'
         document.getElementById('btnGeoloc').appendChild(btn);
-      
-           
             
-        let lat, lon;
+        function setup() {
+            const video = createCapture(VIDEO); //méthode de P5.js pour afficher la webcam dans le client
+            video.size(320,240);
+            let lat, lon;
 
-        //Au "click" : générer la localisation
+            //Au "click" : générer la localisation
 
-        btn.addEventListener('click', async event => {
-            
-            const vegetable = document.getElementById('mytext').value;
-            const data = { lat, lon, vegetable };
-            
-            const options = { //on va envoyer les coordonnees grâce à la méthode POST
-                method : 'POST',
-                headers: {
-                    'Content-Type': 'application/json' // 'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: JSON.stringify(data), //on convertis les données en un string json
-            };
-            const response = await fetch('/api', options); //on va chercher (fetch) la route '/api' pour envoyer les données à l'api
-            const json = await response.json();
-            console.log(json);
-        });
-
-
-        if ("geolocation" in navigator) {       //test pour savoir si la géolocalisation est dispo sur le webbrowser
-
-            console.log("la géolocalisation est disponible !");  // la géolocalisation est disponible
-
-            //Génération des coordonnées par le navigateur
-
-            navigator.geolocation.getCurrentPosition(async position => {
-                lat = position.coords.latitude;
-                lon = position.coords.longitude;
-                document.getElementById('latitude').textContent = lat.toFixed(2);
-                document.getElementById('longitude').textContent = lon.toFixed(2);
-            
-    
-            //Création de la map
-
-            const mymap = L.map('mapid').setView([lat, lon], 3);
-            const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-            const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-            const tiles = L.tileLayer(tileUrl, { attribution });
-            tiles.addTo(mymap);
-
-            //Créer un marker avec une icone personnalisée
-
-            const moiIcon = L.icon({
-                iconUrl: 'me.png',
-                iconSize: [32, 32],
-                iconAnchor: [16, 16],
+            btn.addEventListener('click', async event => {
+                
+                const texte = document.getElementById('mytext').value;
+                video.loadPixels(); // avertir P5.js que l'on veut charger la webcam
+                const image64 = video.canvas.toDataURL(); // convertis en Base64 (image -> hexadecimal)
+                const data = { lat, lon, texte, image64 };
+                
+                const options = { //on va envoyer les coordonnees grâce à la méthode POST
+                    method : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data), //on convertis les données en un string json
+                };
+                
+                const response = await fetch('/api', options); //on va chercher (fetch) la route '/api' pour envoyer les données à l'api
+                const json = await response.json();
+                console.log(json);
             });
-    
-            const marker = L.marker([lat, lon], { icon: moiIcon }).addTo(mymap);  
-        });
-        }          
-        else {
-                console.log("la géolocalisation est indisponible :( ")    // la géolocalisation n'est pas disponible
-        }
-    
 
+
+            if ("geolocation" in navigator) {       //test pour savoir si la géolocalisation est dispo sur le webbrowser
+
+                console.log("la géolocalisation est disponible !");  // la géolocalisation est disponible
+
+                //Génération des coordonnées par le navigateur
+
+                navigator.geolocation.getCurrentPosition( position => {
+                    lat = position.coords.latitude;
+                    lon = position.coords.longitude;
+                    document.getElementById('latitude').textContent = lat.toFixed(2);
+                    document.getElementById('longitude').textContent = lon.toFixed(2);
+                
+
+                    //Création de la map
+
+                    const mymap = L.map('mapid').setView([lat, lon], 3);
+                    const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                    const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+                    const tiles = L.tileLayer(tileUrl, { attribution });
+                    tiles.addTo(mymap);
+
+                    //Créer un marker avec une icone personnalisée
+
+                    const moiIcon = L.icon({
+                        iconUrl: 'me.png',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16],
+                    });
+                    const marker = L.marker([lat, lon], { icon: moiIcon }).addTo(mymap);  
+                });
+            }          
+            else {
+                    console.log("la géolocalisation est indisponible :( ")    // la géolocalisation n'est pas disponible
+            }
+        };
     </script>
         
 </body>

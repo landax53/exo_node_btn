@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Selfie App</title>
+</head>
+<body>
+
+    <h1>Data Selfie App</h1>
+
+    <a href="/">enter</a> | <a href="./all.html">list</a>
+    <br/><br/>
+    <script>  //Ce script permet d'afficher les data de la database
+        getData();
+        async function getData() {
+            const response = await fetch('/api');
+            const data = await response.json();
+            for(item of data) {
+                const root = document.createElement('div');
+                const texte = document.createElement('div');
+                texte.id = 'texte';
+                const date = document.createElement('div');
+                const geo = document.createElement('div');
+                const image = document.createElement('img');
+
+                texte.textContent = `texte: ${item.texte}`;
+                geo.textContent = `${item.lat}°, ${item.lon}°`;
+                const dateString = new Date(item.timestamp).toLocaleString(); //convertis le timestamp en heure locale (Paris)
+                date.textContent = dateString;
+                image.src = item.image64;
+
+                root.append(texte, geo, date, image);
+                document.body.append(root);
+            }
+            console.log(data)
+        }
+        
+
+    </script>
+</body>
+</html>
